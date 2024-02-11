@@ -1,7 +1,7 @@
 import { useRef, useReducer, useMemo, useEffect } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Environment, Lightformer, OrbitControls } from '@react-three/drei'
-import { Vector3, MathUtils } from 'three'
+import { Environment, Lightformer, OrbitControls, useTexture, RoundedBox } from '@react-three/drei'
+import { Vector3, MathUtils, RepeatWrapping } from 'three'
 import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier'
 import { easing } from 'maath'
 
@@ -9,24 +9,24 @@ import './index.css'
 
 const accents = ['#ff0000', '#00ff00', '#0000ff', '#aa00ff', '#00ffff', '#ffff00', '#999999']
 const shuffle = (accent = 0) => [
-  { color: '#444', roughness: 0.1, metalness: 0.9 },
-  { color: '#444', roughness: 0.1, metalness: 0.9 },
-  { color: '#444', roughness: 0.1, metalness: 0.9 },
-  { color: 'white', roughness: 0.1, metalness: 0.1 },
-  { color: 'white', roughness: 0.1, metalness: 0.1 },
-  { color: 'white', roughness: 0.1, metalness: 0.1 },
+  { color: '#444', roughness: 0.01, metalness: 0.9 },
+  { color: '#444', roughness: 0.01, metalness: 0.9 },
+  { color: '#444', roughness: 0.01, metalness: 0.9 },
+  { color: 'white', roughness: 0.01, metalness: 0.1 },
+  { color: 'white', roughness: 0.01, metalness: 0.1 },
+  { color: 'white', roughness: 0.01, metalness: 0.1 },
   { color: accents[accent], roughness: 0.1, accent: true },
   { color: accents[accent], roughness: 0.1, accent: true },
   { color: accents[accent], roughness: 0.1, accent: true },
-  { color: '#222', roughness: 0.1 },
-  { color: '#222', roughness: 0.3 },
-  { color: '#222', roughness: 0.3 },
-  { color: '#ff00aa', roughness: 0.1 },
-  { color: '#ff00aa', roughness: 0.2 },
-  { color: '#ff00aa', roughness: 0.1 },
-  { color: accents[accent], roughness: 0.1, accent: true, transparent: true, opacity: 0.5 },
-  { color: accents[accent], roughness: 0.3, accent: true },
-  { color: accents[accent], roughness: 0.1, accent: true }
+  { color: '#222', roughness: 0.01 },
+  { color: '#222', roughness: 0.03 },
+  { color: '#222', roughness: 0.03 },
+  { color: '#ff00aa', roughness: 0.01 },
+  { color: '#ff00aa', roughness: 0.02 },
+  { color: '#ff00aa', roughness: 0.01 },
+  { color: accents[accent], roughness: 0.01, accent: true, transparent: true, opacity: 0.5 },
+  { color: accents[accent], roughness: 0.03, accent: true },
+  { color: accents[accent], roughness: 0.01, accent: true }
 ]
 
 export default function App(props) {
@@ -82,6 +82,20 @@ function Sphere({ position, children, vec = new Vector3(), scale, r = MathUtils.
   const api = useRef()
   const ref = useRef()
   const pos = useMemo(() => position || [r(10), r(10), r(10)], [])
+
+  const [normalMap01, normalMap02, normalMap03, normalMap04, normalMap05, roughnessMap] = useTexture([
+      './textures/Metal_scratched_02.jpg',
+      './textures/Metal_scratched_003.jpg',
+      './textures/scratches_04.jpg',
+      './textures/Surface_Imperfections_001.jpg',
+      './textures/SurfaceImperfections003_1K_Normal.jpg',      
+      './textures/SurfaceImperfections003_1K_var1.jpg',      
+    ])
+
+  normalMap05.wrapS = RepeatWrapping
+  normalMap05.wrapT = RepeatWrapping
+  roughnessMap.wrapT = RepeatWrapping
+  roughnessMap.wrapT = RepeatWrapping
   
   useFrame((state, delta) => {
     delta = Math.min(0.1, delta)
@@ -98,14 +112,21 @@ function Sphere({ position, children, vec = new Vector3(), scale, r = MathUtils.
       ref={api} 
       colliders={false}>
       <CuboidCollider args={[1, 1, 1]} />
-      <mesh 
+      <RoundedBox
+      args={[2, 2, 2]}
+      radius={0.03}
       ref={ref} 
       castShadow 
       receiveShadow>
-        <boxGeometry args={[2, 2, 2]} />
-        <meshStandardMaterial {...props} />
+        {/* <boxGeometry args={[2, 2, 2]} /> */}
+        <meshStandardMaterial 
+        {...props} 
+        normalMap = {normalMap05}
+        normalScale = {0.18}
+        roughnessMap = {roughnessMap}
+        />
         {children}
-      </mesh>
+      </RoundedBox>
     </RigidBody>
   )
 }
