@@ -1,6 +1,6 @@
-import { useRef, useReducer, useMemo, useEffect } from 'react'
+import { useRef, useReducer, useMemo, useState } from 'react'
 import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { Environment, Lightformer, OrbitControls, useTexture, RoundedBox } from '@react-three/drei'
+import { Environment, Lightformer, OrbitControls, useTexture, RoundedBox, useEnvironment } from '@react-three/drei'
 import { Vector3, MathUtils, RepeatWrapping } from 'three'
 import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier'
 import { easing } from 'maath'
@@ -33,13 +33,17 @@ export default function App(props) {
   const [accent, click] = useReducer((state) => ++state % accents.length, 0)
   const connectors = useMemo(() => shuffle(accent), [accent])
 
+  const [enabled, setIsEnabled] = useState(false)
+  const toggleSwitch = () => setIsEnabled(previousState => !previousState) 
+  console.log('enabled:')
+
   return (
   <>
 
   <Canvas 
   flat 
   shadows 
-  onClick={click} 
+  onClick={toggleSwitch} 
   dpr={[1, 1.5]} 
   gl={{ antialias: true }} 
   camera={{ position: [0, 0, 30], 
@@ -54,16 +58,31 @@ export default function App(props) {
 
       <Physics 
         timeStep="vary" 
-        gravity={[0, 0, 0]}>
-        {connectors.map((props, i) => (
+        gravity={enabled? [0, 0, 0] : [0, -200, 0]}>
         
+        <RigidBody type='fixed'>
+        <mesh
+        position={[0, -5, 0 ]}
+        rotation={[-0.5*Math.PI, 0 , 0]}
+        >
+        <boxGeometry args={[ 20, 20, 1]}>
+        </boxGeometry>
+      </mesh>
+      </RigidBody>
+
+        {connectors.map((props, i) => (
         <Sphere 
         key={i} 
         {...props} />
         ))}
       </Physics>
       
-      <Environment resolution={256}>
+      <Environment 
+        resolution={256}
+        files={'./environments/studio_small_03_4k.hdr'}
+        intensity={0.0}
+        // files={'./environments/tiergarten_2k.hdr'}
+        >
         <group rotation={[-Math.PI / 3, 0, 1]}>
           <Lightformer form="circle" intensity={100} rotation-x={Math.PI / 2} position={[0, 5, -9]} scale={2} />
           <Lightformer form="circle" intensity={2} rotation-y={Math.PI / 2} position={[-5, 1, -1]} scale={2} />
@@ -111,10 +130,11 @@ function Sphere({ position, children, vec = new Vector3(), scale, r = MathUtils.
       position={pos} 
       ref={api} 
       colliders={false}>
+
       <CuboidCollider args={[1, 1, 1]} />
       <RoundedBox
       args={[2, 2, 2]}
-      radius={0.03}
+      radius={0.01}
       ref={ref} 
       castShadow 
       receiveShadow>
@@ -127,6 +147,8 @@ function Sphere({ position, children, vec = new Vector3(), scale, r = MathUtils.
         />
         {children}
       </RoundedBox>
+      
     </RigidBody>
+    
   )
 }
